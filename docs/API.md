@@ -10,4 +10,10 @@
 
 `GET /api/runs/<id>`读取指定批次；页面与证据CSV通过run_id查询参数绑定批次，模块导航保留该参数。
 
+## 调拨收发对账（运行期，独立账本）
+
+`POST /api/recon/events`：JSON `{batch_id?, events:[...]}`，事件类型与守恒口径见 docs/RECONCILIATION.md。省略 batch_id 时由事件内容派生幂等批次；同批重跑返回 reused 且不新增加扣减。
+
+`POST /api/recon/demo`：装载/重跑内置演示批次。`GET /api/recon/batches` 列批次；`GET /api/recon/batches/<id>` 取当前对账结论；`GET /api/recon/batches/<id>/ledger` 取只增事件凭证与版本历史。看板页面 `/recon`。任一条事件非法整批回滚（422，`RECON_*` 原因码），上一版结论保留。
+
 JSON请求体必须是对象，数组、标量、null、损坏JSON及错误上传字段返回400，且不运行默认样例。

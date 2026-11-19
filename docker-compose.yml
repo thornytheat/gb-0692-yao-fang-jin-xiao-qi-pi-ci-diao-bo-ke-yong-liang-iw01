@@ -5,6 +5,7 @@ services:
       - "${PORT:-18206}:8000"
     environment:
       APP_DB: /data/runs.sqlite3
+      RECON_DB: /data/recon.sqlite3
     volumes:
       - records:/data
 volumes:

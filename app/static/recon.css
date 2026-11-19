@@ -1,0 +1,40 @@
+.recon-page{max-width:1280px;margin:0 auto;padding:14px 18px 30px;background:var(--bg);min-height:100vh}
+.recon-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.recon-top>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.recon-top strong{font-size:17px}
+.recon-top__actions{display:flex;align-items:center;gap:8px}
+.recon-rules{background:var(--surface-2);border:1px solid var(--line);padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--ink-muted)}
+.recon-rules b{color:var(--ink)}
+.recon-kpis{grid-template-columns:repeat(7,1fr);margin-bottom:12px}
+.recon-kpis .ok{color:var(--ok)}
+.recon-kpis .bad{color:var(--bad)}
+.recon-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:10px;margin-bottom:14px}
+.order-card{background:var(--surface);border:1px solid var(--line);border-left-width:4px;padding:10px 12px;min-width:0}
+.order-card.status-已结清{border-left-color:var(--ok)}
+.order-card.status-可结清{border-left-color:var(--info)}
+.order-card.status-部分收货在途,.order-card.status-补发在途{border-left-color:var(--warn)}
+.order-card.status-短少待补发,.order-card.status-待短少认定{border-left-color:var(--bad)}
+.order-card.status-待发货{border-left-color:var(--line-strong)}
+.order-card__head h3{margin:0 0 6px;font-size:13px}
+.order-card__head h3 small{font-weight:400;color:var(--ink-muted);margin-left:6px}
+.order-card__hint{margin:6px 0 0;font-size:10px;color:var(--ink-muted)}
+.status-pill,.pill{display:inline-block;font-size:10px;padding:2px 7px;border:1px solid var(--line-strong);margin-right:6px}
+.pill--ok{color:var(--ok);border-color:var(--ok)}
+.pill--muted{color:var(--ink-muted)}
+.pill--bad{color:var(--bad);border-color:var(--bad)}
+.order-card__nums{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:8px 0}
+.order-card__nums div{background:var(--surface);padding:5px 7px}
+.order-card__nums span{display:block;font-size:9px;color:var(--ink-muted)}
+.order-card__nums b{font:14px var(--font-num)}
+.order-card__nums b.warn{color:var(--warn)}
+.ship-table{font-size:10px}
+.ship-table th,.ship-table td{font-size:10px;padding:4px 6px}
+.receipts{text-align:left!important;white-space:normal}
+.chip{display:inline-block;background:var(--surface-2);padding:1px 6px;margin:1px 3px 1px 0;font-size:9px;border:1px solid var(--line)}
+.chip--warn{color:var(--bad);border-color:var(--bad)}
+.recon-side{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#event-input{height:160px}
+#ledger-box{max-height:300px;font:10px var(--font-num)}
+.ledger-event{border-bottom:1px solid var(--line);padding:6px 4px}
+.ledger-event b{color:var(--accent)}
+@media(max-width:900px){.recon-side{grid-template-columns:1fr}.recon-kpis{grid-template-columns:repeat(3,1fr)}}

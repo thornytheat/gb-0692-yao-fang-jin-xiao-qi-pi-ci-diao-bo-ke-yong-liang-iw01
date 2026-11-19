@@ -18,6 +18,10 @@ docker compose config --quiet
 
 SQLite保存在命名卷records；容器重建保留历史。只在确认不再需要数据时执行 `docker compose down -v` 重建。端口可通过.env中的PORT调整。本地也可 `pip install -r requirements.txt` 后 `python -m app.main`。
 
+## 调拨收发对账（运行期）
+
+计划期（M1–M7）决定该发什么；运行期收发对账（`/recon`）跟踪每张调拨单发出后的在途、已收、净短少与可再分配量，守恒口径为 `批准量 = 原发待发 + 已收 + 在途 + 净短少 + 可再分配`。未收清数量不计门店库存、不另许别家；短少补发接回原单，晚到不重复冲减。事件只增留痕、失败整批回滚保留上一版结论、同批重跑幂等。详见 docs/RECONCILIATION.md。
+
 ## 定义与限制
 
 详见docs/DATA-DICTIONARY.md、docs/DEPTH.md。单文件最大5MB/一万行，本工具按确定性文件离线复算，不查询外部业务系统。源码位于app，测试位于tests，样例位于sample_data。

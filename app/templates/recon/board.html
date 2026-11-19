@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>调拨收发对账看板</title>
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="stylesheet" href="/static/layout.css">
+<link rel="stylesheet" href="/static/components.css">
+<link rel="stylesheet" href="/static/recon.css">
+<script defer src="/static/recon.js"></script>
+</head>
+<body>
+<div class="recon-page">
+<header class="recon-top">
+  <div>
+    <strong>调拨收发对账看板</strong>
+    <a class="btn" href="/work/6">返回 M6 计划对账</a>
+  </div>
+  <div class="recon-top__actions">
+    <span class="tag" id="batch-tag">批次 {{ view.batch_id if view else demo_batch }}</span>
+    <span class="tag" id="version-tag">版本 {{ view.version if view else '—' }}</span>
+    <button class="primary" id="load-demo">载入/重跑演示批次</button>
+  </div>
+</header>
+
+<section class="recon-rules">
+  <p>守恒核对：<b>批准量 = 已收 + 在途 + 短少 + 可再分配</b>。未收清数量不计门店库存、不另许别家；短少补发接回原单，晚到不重复冲减短少。</p>
+</section>
+
+<div class="kpis recon-kpis" id="kpis">
+  {% if view %}
+  <div class="kpi"><span>调拨单</span><b>{{ view.conclusion.totals.orders }}</b></div>
+  <div class="kpi"><span>批准合计</span><b>{{ view.conclusion.totals.approved }} <small>件</small></b></div>
+  <div class="kpi"><span>门店已收(库存)</span><b>{{ view.conclusion.totals.received }} <small>件</small></b></div>
+  <div class="kpi"><span>在途未清</span><b>{{ view.conclusion.totals.in_transit }} <small>件</small></b></div>
+  <div class="kpi"><span>短少</span><b>{{ view.conclusion.totals.shortage }} <small>件</small></b></div>
+  <div class="kpi"><span>可再分配</span><b>{{ view.conclusion.totals.redistributable }} <small>件</small></b></div>
+  <div class="kpi"><span>守恒</span><b id="balance-flag" class="{{ 'ok' if view.conclusion.totals.all_balanced else 'bad' }}">{{ '全部相符' if view.conclusion.totals.all_balanced else '差异' }}</b></div>
+  {% endif %}
+</div>
+
+<main class="recon-board" id="board">
+{% if not view %}
+  <p class="empty">还没有对账批次。点击右上角“载入/重跑演示批次”，或通过 <code>POST /api/recon/events</code> 提交收发事件。</p>
+{% else %}
+  {% for r in view.conclusion.rows %}
+  <article class="order-card status-{{ r.status }}">
+    <div class="order-card__head">
+      <div>
+        <h3>{{ r.order_no }} <small>{{ r.sku }} · 批号 {{ r.lot or '—' }} · {{ r.store }}</small></h3>
+        <span class="status-pill">{{ r.status }}</span>
+        <span class="pill {{ 'pill--ok' if r.can_continue_issue else 'pill--muted' }}">
+          {{ '可继续发放' if r.can_continue_issue else '不可继续发放' }}
+        </span>
+        <span class="pill {{ 'pill--ok' if r.balanced else 'pill--bad' }}">
+          {{ '守恒相符' if r.balanced else '守恒差异' }}
+        </span>
+      </div>
+      <p class="order-card__hint">{{ r.status_hint }}</p>
+    </div>
+
+    <div class="order-card__nums">
+      <div><span>批准量</span><b>{{ r.approved_qty }}</b></div>
+      <div><span>已发(含补发)</span><b>{{ r.sent_qty }}</b></div>
+      <div><span>已收=门店库存</span><b>{{ r.received_qty }}</b></div>
+      <div><span>在途</span><b>{{ r.in_transit_qty }}</b></div>
+      <div><span>短少</span><b>{{ r.shortage_qty }}</b></div>
+      <div><span>补发已发</span><b>{{ r.reship_sent_qty }}</b></div>
+      <div><span>晚到转出</span><b>{{ r.late_excess_qty }}</b></div>
+      <div><span>可再分配</span><b class="{{ 'warn' if r.redistributable_qty else '' }}">{{ r.redistributable_qty }}</b></div>
+    </div>
+
+    <table class="ship-table">
+      <thead><tr><th>发货批次</th><th>类别</th><th>发出</th><th>已收</th><th>在途</th><th>短少</th><th>晚到转出</th><th>回执/认定</th></tr></thead>
+      <tbody>
+      {% for s in r.shipments %}
+        <tr>
+          <td>{{ s.shipment_no }}</td>
+          <td>{{ '补发(接原单)' if s.kind == 'reship' else '原发' }}</td>
+          <td>{{ s.qty }}</td><td>{{ s.received }}</td><td>{{ s.in_transit }}</td>
+          <td>{{ s.claimed }}</td><td>{{ s.late_excess }}</td>
+          <td class="receipts">
+            {% for rc in s.receipts %}<span class="chip">回执 {{ rc.receipt_no }}：{{ rc.qty }}{% if rc.excess_qty %}（晚到转出{{ rc.excess_qty }}）{% endif %}</span>{% endfor %}
+            {% for c in s.claims %}<span class="chip chip--warn">短少 {{ c.qty }}：{{ c.reason }}</span>{% endfor %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="empty">尚未发货</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </article>
+  {% endfor %}
+{% endif %}
+</main>
+
+<section class="recon-side">
+  <div class="panel">
+    <div class="panel__head"><h2>提交收发事件</h2><span>JSON</span></div>
+    <div class="panel__body">
+      <textarea id="event-input" aria-label="事件JSON" placeholder='[{"event_id":"E1","type":"order_approved",...}]'></textarea>
+      <div class="actions">
+        <button id="submit-events">提交事件批次</button>
+        <button id="show-ledger">查看当前批次凭证</button>
+      </div>
+      <div id="recon-message" class="error" role="status"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel__head"><h2>批次凭证（原单/回执留存）</h2><span id="ledger-meta">只读</span></div>
+    <div class="scroll" id="ledger-box"><p class="empty">载入批次后查看。</p></div>
+  </div>
+</section>
+
+<footer class="statusbar">
+  <span>规则版本 {{ view.rule_version if view else 'recon-2026.11.19.1' }}</span>
+  <span id="recon-created">{{ view.created_at if view else '' }}</span>
+</footer>
+</div>
+<script type="application/json" id="recon-context">{{ {'batch_id': view.batch_id if view else demo_batch, 'demo_batch': demo_batch}|tojson }}</script>
+</body>
+</html>

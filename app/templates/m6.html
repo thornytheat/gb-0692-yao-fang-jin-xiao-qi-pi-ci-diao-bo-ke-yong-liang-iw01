@@ -1,2 +1,8 @@
 {% extends 'base.html' %}
-{% block stage_visual %}{% for r in current.rows %}<div class="stock-bar"><span>{{r["项目"]}}</span><b>{{r["差额"]}} 件</b></div>{% endfor %}{% endblock %}
+{% block stage_visual %}
+<div class="panel__body">
+  <a class="btn" href="/recon">打开调拨收发对账看板 →</a>
+  <p style="font-size:10px;color:var(--ink-muted);margin-top:8px">逐单跟踪在途 / 已收 / 短少 / 可再分配，支持短少补发接原单、晚到不重复冲减与版本留痕。</p>
+  {% for r in current.rows %}<div class="stock-bar"><span>{{r["项目"]}}</span><b>{{r["差额"]}} 件</b></div>{% endfor %}
+</div>
+{% endblock %}

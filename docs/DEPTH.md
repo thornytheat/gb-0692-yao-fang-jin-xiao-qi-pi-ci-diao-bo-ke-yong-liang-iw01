@@ -36,3 +36,16 @@
 ## 已知不覆盖
 
 部署为本地单用户工具，不连接外部上游系统。CSV单文件5MB及一万条业务记录上限；不推断未提供的未知数据。
+
+## 运行期收发对账子系统（app/recon）
+
+独立于 M1–M7 计划流水线，按单据级事件流重算在途/已收/净短少/可再分配，看板 `/recon`。守恒口径 `批准量=原发待发+已收+在途+净短少+可再分配`，详见 docs/RECONCILIATION.md。
+
+| 陷阱 | 朴素实现会怎样 | 本项目处理 | 处理位置 | 测试 |
+|---|---|---|---|---|
+| 仓库一发就释放整单库存 | 门店短收时货已离仓、补货责任落空 | 未收清只认在途/原发待发，不计门店库存也不另许别家 | `app/recon/engine.py::_measures` | `test_split_receipt_keeps_unreceived_in_transit` |
+| 短少补发另开新单 | 原单缺口对不上、重复冲减 | 补发为原单 reship 批次，净短少随补发在途/收回冲减 | `app/recon/engine.py` | `test_reship_links_back_to_original_order`、`test_incremental_reship_flow_status_transitions` |
+| 晚到收货重复冲短少 | 短少被扣两次、库存虚减 | 晚到先冲净短少再转可再分配，回执号去重 | `app/recon/engine.py::apply_event` | `test_late_receipt_does_not_double_charge_shortage` |
+| 失败批污染当前结论 | 半成功状态覆盖可发布版本 | 单事务整批回滚，上一版结论与事件原样保留 | `app/recon/store.py::process_batch` | `test_failed_batch_rolls_back_and_keeps_previous_version` |
+| 同批重跑新增加扣减 | 重复事件导致数量翻倍 | 已知事件幂等跳过，结论逐字段不变并标 reused | `app/recon/store.py` | `test_rerun_same_batch_adds_no_deductions` |
+| 全局版本号跨批错乱 | 批次版本不从1开始、陈旧判断失效 | 版本号按批次独立递增，只增事件表留存原单与回执 | `app/recon/store.py` | `test_ledger_retains_raw_orders_and_receipts` |
